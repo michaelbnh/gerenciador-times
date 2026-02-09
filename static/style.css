@@ -56,20 +56,21 @@ a.danger {
     font-weight: bold;
 }
 
-/* LISTA DE JOGADORES EM GRID */
+/* LISTA DE JOGADORES */
 .jogadores-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;
 }
 
 .jogador {
-    padding: 6px 10px;
+    padding: 6px 14px;
     border-radius: 20px;
     font-size: 14px;
     color: #fff;
     text-align: center;
+    white-space: nowrap;
 }
 
 /* CORES AUTOMÁTICAS */
@@ -110,7 +111,7 @@ a.danger {
         padding: 10px;
     }
 
-    /* GRID PRINCIPAL vira coluna única */
+    /* GRID vira coluna única */
     .grid {
         grid-template-columns: 1fr;
     }
@@ -127,7 +128,7 @@ a.danger {
         font-size: 1.1rem;
     }
 
-    /* Input ocupa toda largura */
+    /* Input 100% */
     input[type="text"] {
         width: 100%;
         padding: 10px;
@@ -135,21 +136,21 @@ a.danger {
         margin-bottom: 8px;
     }
 
-    /* Botão grande para toque */
+    /* Botão touch-friendly */
     button {
         width: 100%;
         padding: 12px;
         font-size: 16px;
     }
 
-    /* Jogadores em 1 coluna */
+    /* Chips organizados no mobile */
     .jogadores-grid {
-        grid-template-columns: 1fr;
+        gap: 6px;
     }
 
     .jogador {
-        font-size: 15px;
-        padding: 10px;
+        font-size: 14px;
+        padding: 8px 14px;
     }
 
     /* Times */
@@ -158,7 +159,7 @@ a.danger {
         margin-bottom: 12px;
     }
 
-    /* Links mais clicáveis */
+    /* Links */
     a {
         font-size: 15px;
         display: inline-block;

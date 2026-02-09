@@ -11,7 +11,6 @@ class GerenciadorTimes:
 
         usados = set(time1 + time2)
 
-        # Tudo que sobrar vai para a fila
         for jogador in jogadores:
             if jogador not in usados:
                 self.fila.append(jogador)
@@ -22,12 +21,10 @@ class GerenciadorTimes:
     def time_perdeu(self, indice):
         time = self.times[indice]
 
-        # Remove todos do time perdedor
         for jogador in time:
             self.fila.append(jogador)
 
         self.times[indice] = []
 
-        # Preenche com os próximos da fila
         while self.fila and len(self.times[indice]) < self.tamanho_time:
             self.times[indice].append(self.fila.pop(0))

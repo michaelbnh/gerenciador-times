@@ -4,291 +4,184 @@
     <meta charset="UTF-8">
     <title>Gerenciamento de Times</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f2f4f8;
-            margin: 0;
-            padding: 20px;
-        }
+    <!-- 🔑 ESSENCIAL PARA RESPONSIVIDADE -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .container {
-            display: grid;
-            grid-template-columns: 380px 1fr;
-            gap: 20px;
-        }
-
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.08);
-        }
-
-        h2 {
-            margin-top: 0;
-        }
-
-        /* Jogadores */
-        .jogadores-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .jogador-card {
-            color: #fff;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 14px;
-        }
-
-        .times-check {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 6px;
-            font-size: 12px;
-        }
-
-        /* Cores alternadas */
-        .cor-1 { background: #0d6efd; }
-        .cor-2 { background: #198754; }
-        .cor-3 { background: #0dcaf0; }
-        .cor-4 { background: #ffc107; color:#000; }
-        .cor-5 { background: #dc3545; }
-        .cor-6 { background: #6f42c1; }
-        .cor-7 { background: #20c997; }
-        .cor-8 { background: #fd7e14; }
-
-        button {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 6px;
-            background: #0d6efd;
-            color: #fff;
-            cursor: pointer;
-        }
-
-        button:hover {
-            opacity: .9;
-        }
-
-        .acoes {
-            margin-top: 10px;
-        }
-
-        a {
-            display: inline-block;
-            margin-top: 10px;
-            text-decoration: none;
-            color: #0d6efd;
-        }
-
-        /* Times */
-        .time-box {
-            border-left: 6px solid #198754;
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            background: #fff;
-        }
-
-        .jogador-chip {
-            display: inline-block;
-            padding: 6px 10px;
-            margin: 4px;
-            border-radius: 20px;
-            color: #fff;
-            font-size: 13px;
-        }
-    </style>
+    <!-- CSS EXTERNO -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
 <div class="container">
+    <div class="grid">
 
-    <!-- COLUNA ESQUERDA -->
-    <div class="card">
-        <h2>Adicionar Jogadores</h2>
+        <!-- COLUNA ESQUERDA -->
+        <div class="card">
+            <h2>Adicionar Jogadores</h2>
 
-        <form method="POST">
-            <input type="hidden" name="acao" value="adicionar">
-            <input type="text" name="nome" placeholder="Nome do jogador" required>
-            <button type="submit">Adicionar</button>
-        </form>
+            <form method="POST">
+                <input type="hidden" name="acao" value="adicionar">
+                <input type="text" name="nome" placeholder="Nome do jogador" required>
+                <button type="submit">Adicionar</button>
+            </form>
 
-        <h3>Jogadores adicionados</h3>
+            <h3>Jogadores adicionados</h3>
 
-        <form method="POST">
-            <input type="hidden" name="acao" value="criar">
+            <form method="POST">
+                <input type="hidden" name="acao" value="criar">
 
-            <div class="jogadores-grid">
-                {% for jogador in jogadores %}
-                <div class="jogador-card cor-{{ loop.index0 % 8 + 1 }}">
-                    <strong>{{ loop.index }}º – {{ jogador }}</strong>
+                <div class="jogadores-grid">
+                    {% for jogador in jogadores %}
+                    <div class="jogador cor-{{ loop.index0 % 8 + 1 }}">
+                        <strong>{{ loop.index }}º – {{ jogador }}</strong>
 
-                    <div class="times-check">
-                        <label>
-                            <input type="checkbox"
-                                   name="time1"
-                                   value="{{ jogador }}"
-                                   class="time1"
-                                   onchange="controlarSelecao(this)">
-                            Time 1
-                        </label>
+                        <div style="margin-top:6px; font-size:12px;">
+                            <label>
+                                <input type="checkbox"
+                                       name="time1"
+                                       value="{{ jogador }}"
+                                       class="time1"
+                                       onchange="controlarSelecao(this)">
+                                Time 1
+                            </label>
 
-                        <label>
-                            <input type="checkbox"
-                                   name="time2"
-                                   value="{{ jogador }}"
-                                   class="time2"
-                                   onchange="controlarSelecao(this)">
-                            Time 2
-                        </label>
+                            <label style="margin-left:8px;">
+                                <input type="checkbox"
+                                       name="time2"
+                                       value="{{ jogador }}"
+                                       class="time2"
+                                       onchange="controlarSelecao(this)">
+                                Time 2
+                            </label>
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
+
+                <button type="submit" style="margin-top:10px;">
+                    Criar Times
+                </button>
+            </form>
+
+            <a href="/resetar" class="danger">🔄 Resetar tudo</a>
+        </div>
+
+        <!-- COLUNA DIREITA -->
+        <div>
+
+            <h2>🏟️ Times Ativos</h2>
+
+            {% for time in times %}
+            <div class="card time-ativo">
+                <h3>Time {{ loop.index }}</h3>
+
+                {% for jogador in time %}
+                    <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">
+                        {{ jogador }}
+                    </span>
                 {% endfor %}
+
+                <div style="margin-top:10px;">
+                    ❌ <a href="/perdeu/{{ loop.index }}">Time {{ loop.index }} perdeu</a>
+                </div>
             </div>
-
-            <div class="acoes">
-                <button type="submit">Criar Times</button>
-            </div>
-        </form>
-
-        <a href="/resetar">🔄 Resetar tudo</a>
-    </div>
-
-    <!-- COLUNA DIREITA -->
-    <div>
-
-        <h2>🏟️ Times Ativos</h2>
-
-        {% for time in times %}
-        <div class="time-box">
-            <h3>Time {{ loop.index }}</h3>
-
-            {% for jogador in time %}
-                <span class="jogador-chip cor-{{ loop.index0 % 8 + 1 }}">
-                    {{ jogador }}
-                </span>
             {% endfor %}
 
-            <div style="margin-top:10px;">
-                ❌ <a href="/perdeu/{{ loop.index }}">Time {{ loop.index }} perdeu</a>
+            <h2>⏳ Times em Espera</h2>
 
-            </div>
-        </div>
-        {% endfor %}
-
-        <h2>⏳ Times em Espera</h2>
-
-        {% if fila %}
-            <div class="time-box">
+            {% if fila %}
+            <div class="card time-espera">
                 {% for jogador in fila %}
-                    <span class="jogador-chip cor-{{ loop.index0 % 8 + 1 }}">
+                    <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">
                         {{ jogador }}
                     </span>
                 {% endfor %}
             </div>
-        {% else %}
-            <p>Nenhum time em espera.</p>
-        {% endif %}
+            {% else %}
+                <p>Nenhum time em espera.</p>
+            {% endif %}
 
-        <h2>📜 Histórico de Partidas</h2>
+            <h2>📜 Histórico de Partidas</h2>
 
-{% if historico %}
-  {% for h in historico %}
-    <div class="time-box">
-      <strong>Partida {{ h.partida }}</strong><br><br>
+            {% if historico %}
+                {% for h in historico %}
+                <div class="card">
+                    <strong>Partida {{ h.partida }}</strong><br><br>
 
-      🏆 <strong>Vencedor:</strong>
-      {% for j in h.vencedor %}
-        <span class="jogador-chip cor-{{ loop.index0 % 8 + 1 }}">{{ j }}</span>
-      {% endfor %}
+                    🏆 <strong>Vencedor:</strong><br>
+                    {% for j in h.vencedor %}
+                        <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">{{ j }}</span>
+                    {% endfor %}
 
-      <br><br>
+                    <br><br>
 
-      ❌ <strong>Perdedor:</strong>
-      {% for j in h.perdedor %}
-        <span class="jogador-chip cor-{{ loop.index0 % 8 + 1 }}">{{ j }}</span>
-      {% endfor %}
+                    ❌ <strong>Perdedor:</strong><br>
+                    {% for j in h.perdedor %}
+                        <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">{{ j }}</span>
+                    {% endfor %}
 
-      <br><br>
+                    <br><br>
 
-      🔄 <strong>Entrou:</strong>
-      {% if h.entrou %}
-        {% for j in h.entrou %}
-          <span class="jogador-chip cor-{{ loop.index0 % 8 + 1 }}">{{ j }}</span>
-        {% endfor %}
-      {% else %}
-        <em>Ninguém (fila insuficiente)</em>
-      {% endif %}
+                    🔄 <strong>Entrou:</strong><br>
+                    {% if h.entrou %}
+                        {% for j in h.entrou %}
+                            <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">{{ j }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <em>Ninguém</em>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>Nenhuma partida registrada ainda.</p>
+            {% endif %}
+
+        </div>
+
     </div>
-  {% endfor %}
-{% else %}
-  <p>Nenhuma partida registrada ainda.</p>
-{% endif %}
-
-
-    </div>
-
 </div>
 
 <!-- JAVASCRIPT -->
 <script>
-    const LIMITE = 7;
-    
-    function controlarSelecao(checkbox) {
-        const card = checkbox.closest('.jogador-card');
-        const time1 = card.querySelector('.time1');
-        const time2 = card.querySelector('.time2');
-    
-        // 🔒 Impede marcar os dois times
-        if (checkbox === time1 && time1.checked) {
-            time2.checked = false;
-            time2.disabled = true;
-        } 
-        else if (checkbox === time2 && time2.checked) {
-            time1.checked = false;
-            time1.disabled = true;
-        } 
-        else {
-            time1.disabled = false;
-            time2.disabled = false;
-        }
-    
-        // 🔢 Conta selecionados
-        controlarLimite('time1');
-        controlarLimite('time2');
+const LIMITE = 7;
+
+function controlarSelecao(checkbox) {
+    const card = checkbox.closest('.jogador');
+    const time1 = card.querySelector('.time1');
+    const time2 = card.querySelector('.time2');
+
+    if (checkbox === time1 && time1.checked) {
+        time2.checked = false;
+        time2.disabled = true;
+    } else if (checkbox === time2 && time2.checked) {
+        time1.checked = false;
+        time1.disabled = true;
+    } else {
+        time1.disabled = false;
+        time2.disabled = false;
     }
-    
-    function controlarLimite(classe) {
-        const checkboxes = document.querySelectorAll(`.${classe}`);
-        const selecionados = Array.from(checkboxes).filter(c => c.checked);
-    
-        if (selecionados.length >= LIMITE) {
-            checkboxes.forEach(c => {
-                if (!c.checked) {
-                    c.disabled = true;
-                }
-            });
-        } else {
-            checkboxes.forEach(c => {
-                // só reabilita se o outro time não estiver marcado
-                const card = c.closest('.jogador-card');
-                const outro = classe === 'time1'
-                    ? card.querySelector('.time2')
-                    : card.querySelector('.time1');
-    
-                if (!outro.checked) {
-                    c.disabled = false;
-                }
-            });
+
+    controlarLimite('time1');
+    controlarLimite('time2');
+}
+
+function controlarLimite(classe) {
+    const checkboxes = document.querySelectorAll(`.${classe}`);
+    const selecionados = Array.from(checkboxes).filter(c => c.checked);
+
+    checkboxes.forEach(c => {
+        if (!c.checked) {
+            const card = c.closest('.jogador');
+            const outro = classe === 'time1'
+                ? card.querySelector('.time2')
+                : card.querySelector('.time1');
+
+            c.disabled = selecionados.length >= LIMITE || outro.checked;
         }
-    }
-    </script>    
+    });
+}
+</script>
 
 </body>
 </html>

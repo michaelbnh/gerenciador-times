@@ -18,7 +18,6 @@ def index():
     if request.method == "POST":
         acao = request.form.get("acao")
 
-        # ➕ Adicionar jogador
         if acao == "adicionar":
             nome = request.form.get("nome")
             if nome:
@@ -28,7 +27,6 @@ def index():
                 if jogo_iniciado:
                     fila.append(nome)
 
-        # ⚽ Criar times (uma única vez)
         elif acao == "criar" and not jogo_iniciado:
             time1 = request.form.getlist("time1")
             time2 = request.form.getlist("time2")
@@ -64,20 +62,16 @@ def perdeu(indice):
     time_perdedor = times[indice]
     time_vencedor = times[1 - indice] if len(times) > 1 else []
 
-    # Time perdedor vai para o fim da fila
     fila.extend(time_perdedor)
 
-    # Remove o perdedor
     times.pop(indice)
 
-    # Novo time entra
     entrou = []
     if len(fila) >= TAMANHO_TIME:
         entrou = fila[:TAMANHO_TIME]
         fila = fila[TAMANHO_TIME:]
         times.insert(indice, entrou)
 
-    # 📜 Salva no histórico
     historico.insert(0, {
         "partida": contador_partidas,
         "vencedor": time_vencedor.copy(),
@@ -103,6 +97,3 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
-if __name__ == "__main__":
-    app.run()

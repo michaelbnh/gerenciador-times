@@ -1,99 +1,206 @@
-from flask import Flask, render_template, redirect, url_for, request
-
+from flask import Flask, render_template, request, redirect, jsonify
 app = Flask(__name__)
 
-jogadores = []
-times = []
-fila = []
-historico = []
-
-jogo_iniciado = False
 TAMANHO_TIME = 7
-contador_partidas = 0
+
+fila = []
+times = {1: [], 2: []}
+historico = []
+contador_ordem = 1
+contador_partidas = 1
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    global jogadores, times, fila, jogo_iniciado
+    global contador_ordem
 
     if request.method == "POST":
-        acao = request.form.get("acao")
+        nome = request.form.get("nome")
+        if nome:
+            fila.append({"nome": nome, "ordem": contador_ordem})
+            contador_ordem += 1
+        return redirect("/")
 
-        if acao == "adicionar":
-            nome = request.form.get("nome")
-            if nome:
-                nome = nome.strip()
-                jogadores.append(nome)
+    return render_template("index.html", fila=fila, times=times, historico=historico)
 
-                if jogo_iniciado:
-                    fila.append(nome)
+@app.route("/editar", methods=["POST"])
+def editar():
+    ordem = int(request.form["ordem"])
+    novo_nome = request.form["nome"]
 
-        elif acao == "criar" and not jogo_iniciado:
-            time1 = request.form.getlist("time1")
-            time2 = request.form.getlist("time2")
+    for lista in [fila, times[1], times[2]]:
+        for j in lista:
+            if j["ordem"] == ordem:
+                j["nome"] = novo_nome
+                break
 
-            times.clear()
-            times.extend([time1, time2])
+    return redirect("/")
 
-            usados = set(time1 + time2)
-            fila.clear()
-            fila.extend([j for j in jogadores if j not in usados])
+@app.route("/drag", methods=["POST"])
+def drag():
+    ordem = int(request.form["ordem"])
+    destino = int(request.form["destino"])
 
-            jogo_iniciado = True
+    if len(times[destino]) >= TAMANHO_TIME:
+        return redirect("/")
 
-    return render_template(
-        "index.html",
-        jogadores=jogadores,
-        times=times,
-        fila=fila,
-        historico=historico,
-        jogo_iniciado=jogo_iniciado
-    )
+    jogador = None
+    for j in fila:
+        if j["ordem"] == ordem:
+            jogador = j
+            fila.remove(j)
+            break
 
-@app.route("/perdeu/<int:indice>")
-def perdeu(indice):
-    global times, fila, historico, contador_partidas
+    if jogador:
+        times[destino].append(jogador)
 
-    indice -= 1
-    if indice >= len(times):
-        return redirect(url_for("index"))
+    return redirect("/")
 
-    contador_partidas += 1
+@app.route("/perdeu/<int:time_perdedor>")
+def perdeu(time_perdedor):
+    global contador_partidas
 
-    time_perdedor = times[indice]
-    time_vencedor = times[1 - indice] if len(times) > 1 else []
+    time_vencedor = 1 if time_perdedor == 2 else 2
 
-    fila.extend(time_perdedor)
+    perdedor_snapshot = times[time_perdedor].copy()
+    vencedor_snapshot = times[time_vencedor].copy()
 
-    times.pop(indice)
+    if len(perdedor_snapshot) != TAMANHO_TIME or len(vencedor_snapshot) != TAMANHO_TIME:
+        return redirect("/")
 
+    times[time_perdedor] = []
     entrou = []
-    if len(fila) >= TAMANHO_TIME:
-        entrou = fila[:TAMANHO_TIME]
-        fila = fila[TAMANHO_TIME:]
-        times.insert(indice, entrou)
+
+    while len(times[time_perdedor]) < TAMANHO_TIME and fila:
+        j = fila.pop(0)
+        times[time_perdedor].append(j)
+        entrou.append(j)
+
+    usados = set(j["ordem"] for j in times[time_perdedor])
+
+    perdedores_ordenados = sorted(perdedor_snapshot, key=lambda x: x["ordem"])
+    for j in perdedores_ordenados:
+        if len(times[time_perdedor]) < TAMANHO_TIME:
+            times[time_perdedor].append(j)
+            usados.add(j["ordem"])
+
+    for j in perdedor_snapshot:
+        if j["ordem"] not in usados:
+            fila.append(j)
+
+    fila.sort(key=lambda x: x["ordem"])
 
     historico.insert(0, {
         "partida": contador_partidas,
-        "vencedor": time_vencedor.copy(),
-        "perdedor": time_perdedor.copy(),
-        "entrou": entrou.copy()
+        "vencedor": vencedor_snapshot,
+        "perdedor": perdedor_snapshot,
+        "entrou": entrou
     })
 
-    return redirect(url_for("index"))
+    contador_partidas += 1
+    return redirect("/")
 
 @app.route("/resetar")
 def resetar():
-    global jogadores, times, fila, historico, jogo_iniciado, contador_partidas
-    jogadores = []
-    times = []
+    global fila, times, historico, contador_ordem, contador_partidas
     fila = []
+    times = {1: [], 2: []}
     historico = []
-    jogo_iniciado = False
-    contador_partidas = 0
-    return redirect(url_for("index"))
+    contador_ordem = 1
+    contador_partidas = 1
+    return redirect("/")
+
+
+
+@app.route('/mover-jogador', methods=['POST'])
+def mover_jogador():
+    try:
+        data = request.json
+        jogador_data = data['jogador']
+        destino = data['destino']
+        
+        ordem = int(jogador_data['ordem'])
+        nome = jogador_data['nome']
+        origem = jogador_data['origem']
+        
+        # Encontrar e remover o jogador da origem
+        jogador = None
+        
+        if origem == 'fila':
+            # Remover da fila
+            for j in fila:
+                if j['ordem'] == ordem and j['nome'] == nome:
+                    jogador = j
+                    fila.remove(j)
+                    break
+        elif origem == 'team1':
+            # Remover do time 1
+            for j in times[1]:
+                if j['ordem'] == ordem and j['nome'] == nome:
+                    jogador = j
+                    times[1].remove(j)
+                    break
+        elif origem == 'team2':
+            # Remover do time 2
+            for j in times[2]:
+                if j['ordem'] == ordem and j['nome'] == nome:
+                    jogador = j
+                    times[2].remove(j)
+                    break
+        
+        if not jogador:
+            return jsonify({'success': False, 'message': 'Jogador não encontrado'})
+        
+        # Adicionar ao destino
+        if destino == 'fila':
+            # Verificar se já está na fila (não deveria acontecer)
+            if jogador not in fila:
+                fila.append(jogador)
+                # Ordenar fila por ordem
+                fila.sort(key=lambda x: x['ordem'])
+                
+        elif destino == '1':
+            # Verificar se o time já está cheio
+            if len(times[1]) >= TAMANHO_TIME:
+                # Devolver jogador à origem
+                if origem == 'fila':
+                    fila.append(jogador)
+                    fila.sort(key=lambda x: x['ordem'])
+                elif origem == 'team2':
+                    times[2].append(jogador)
+                
+                return jsonify({
+                    'success': False, 
+                    'message': f'Time 1 já está completo ({TAMANHO_TIME} jogadores)'
+                })
+            
+            # Adicionar ao time 1
+            times[1].append(jogador)
+            
+        elif destino == '2':
+            # Verificar se o time já está cheio
+            if len(times[2]) >= TAMANHO_TIME:
+                # Devolver jogador à origem
+                if origem == 'fila':
+                    fila.append(jogador)
+                    fila.sort(key=lambda x: x['ordem'])
+                elif origem == 'team1':
+                    times[1].append(jogador)
+                
+                return jsonify({
+                    'success': False, 
+                    'message': f'Time 2 já está completo ({TAMANHO_TIME} jogadores)'
+                })
+            
+            # Adicionar ao time 2
+            times[2].append(jogador)
+        
+        return jsonify({'success': True, 'message': 'Jogador movido com sucesso'})
+        
+    except Exception as e:
+        print(f"Erro ao mover jogador: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)

@@ -2,181 +2,366 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Gerenciamento de Times</title>
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <title>Gerenciador de Times - Futebol</title>
+    <meta name="description" content="Sistema para gerenciamento de times e rodízio de jogadores em partidas de futebol">
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 
 <body>
+    <div class="container">
+        <header class="header">
+            <h1 class="header__title">⚽ TIME DOS CANSADOS</h1>
+        </header>
 
-<div class="container">
-    <div class="grid">
+        <main class="main-content">
+            <!-- Seção: Adicionar Jogador -->
+            <section class="card card--full" aria-labelledby="add-player-title">
+                <h2 id="add-player-title" class="visually-hidden">Adicionar Novo Jogador</h2>
+                <form method="POST" class="player-form">
+                    <div class="form-group">
+                        <label for="player-name" class="form-label">Nome do jogador</label>
+                        <input 
+                            type="text" 
+                            id="player-name" 
+                            name="nome" 
+                            placeholder="Digite o nome do jogador"
+                            required
+                            aria-required="true"
+                            class="form-input"
+                        >
+                    </div>
+                    <button type="submit" class="btn btn--add">
+                        <span class="btn__icon">➕</span>
+                        Adicionar jogador
+                    </button>
+                </form>
+            </section>
 
-        <div class="card">
-            <h2>Adicionar Jogadores</h2>
-
-            <form method="POST">
-                <input type="hidden" name="acao" value="adicionar">
-                <input type="text" name="nome" placeholder="Nome do jogador" required>
-                <button type="submit">Adicionar</button>
-            </form>
-
-            <h3>Jogadores adicionados</h3>
-
-            <form method="POST">
-                <input type="hidden" name="acao" value="criar">
-
-                <div class="jogadores-grid">
-                    {% for jogador in jogadores %}
-                    <div class="jogador cor-{{ loop.index0 % 8 + 1 }}">
-                        <strong>{{ loop.index }}º – {{ jogador }}</strong>
-
-                        <div style="margin-top:6px; font-size:12px;">
-                            <label>
-                                <input type="checkbox"
-                                       name="time1"
-                                       value="{{ jogador }}"
-                                       class="time1"
-                                       onchange="controlarSelecao(this)">
-                                Time 1
-                            </label>
-
-                            <label style="margin-left:8px;">
-                                <input type="checkbox"
-                                       name="time2"
-                                       value="{{ jogador }}"
-                                       class="time2"
-                                       onchange="controlarSelecao(this)">
-                                Time 2
-                            </label>
-                        </div>
+            <!-- Seção: Fila de Espera -->
+            <section class="card card--full" aria-labelledby="waiting-queue-title">
+                <h2 id="waiting-queue-title" class="section-title">
+                    <span class="section-title__icon">⏳</span>
+                    Fila de Espera
+                </h2>
+                <div class="waiting-queue" id="waiting-queue" role="list" aria-label="Jogadores na fila de espera">
+                    {% for j in fila %}
+                    <div class="player-chip" 
+                         role="listitem"
+                         draggable="true" 
+                         data-ordem="{{ j.ordem }}"
+                         data-player="{{ j.nome }}"
+                         data-origin="fila"
+                         aria-label="{{ j.ordem }}º na fila: {{ j.nome }}">
+                        <span class="player-chip__order">{{ j.ordem }}º</span>
+                        <span class="player-chip__name">{{ j.nome }}</span>
                     </div>
                     {% endfor %}
-                </div>
-
-                <button type="submit" style="margin-top:10px;">
-                    Criar Times
-                </button>
-            </form>
-
-            <a href="/resetar" class="danger">🔄 Resetar tudo</a>
-        </div>
-
-        <div>
-
-            <h2>🏟️ Times Ativos</h2>
-
-            {% for time in times %}
-            <div class="card time-ativo">
-                <h3>Time {{ loop.index }}</h3>
-
-                {% for jogador in time %}
-                    <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">
-                        {{ jogador }}
-                    </span>
-                {% endfor %}
-
-                <div style="margin-top:10px;">
-                    ❌ <a href="/perdeu/{{ loop.index }}">Time {{ loop.index }} perdeu</a>
-                </div>
-            </div>
-            {% endfor %}
-
-            <h2>⏳ Times em Espera</h2>
-
-            {% if fila %}
-            <div class="card time-espera">
-                {% for jogador in fila %}
-                    <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">
-                        {{ jogador }}
-                    </span>
-                {% endfor %}
-            </div>
-            {% else %}
-                <p>Nenhum time em espera.</p>
-            {% endif %}
-
-            <h2>📜 Histórico de Partidas</h2>
-
-            {% if historico %}
-                {% for h in historico %}
-                <div class="card">
-                    <strong>Partida {{ h.partida }}</strong><br><br>
-
-                    🏆 <strong>Vencedor:</strong><br>
-                    {% for j in h.vencedor %}
-                        <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">{{ j }}</span>
-                    {% endfor %}
-
-                    <br><br>
-
-                    ❌ <strong>Perdedor:</strong><br>
-                    {% for j in h.perdedor %}
-                        <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">{{ j }}</span>
-                    {% endfor %}
-
-                    <br><br>
-
-                    🔄 <strong>Entrou:</strong><br>
-                    {% if h.entrou %}
-                        {% for j in h.entrou %}
-                            <span class="jogador cor-{{ loop.index0 % 8 + 1 }}">{{ j }}</span>
-                        {% endfor %}
-                    {% else %}
-                        <em>Ninguém</em>
+                    {% if not fila %}
+                    <p class="empty-state" aria-live="polite">Nenhum jogador na fila de espera</p>
                     {% endif %}
                 </div>
-                {% endfor %}
-            {% else %}
-                <p>Nenhuma partida registrada ainda.</p>
-            {% endif %}
+            </section>
 
-        </div>
+            <!-- Seção: Times -->
+            <div class="teams-container">
+                <!-- Time 1 -->
+                <section class="card team-card" aria-labelledby="team1-title">
+                    <h2 id="team1-title" class="team-title team-title--blue">
+                        <span class="team-title__icon">🔵</span>
+                        Time 1
+                        <span class="team-count">({{ times[1]|length }})</span>
+                    </h2>
+                    
+                    <div class="team team--blue" 
+                         id="team1"
+                         data-team="1"
+                         role="list" 
+                         aria-label="Jogadores do Time 1"
+                         data-dropzone="true">
+                        {% for j in times[1] %}
+                        <div class="player-chip player-chip--team" 
+                             role="listitem"
+                             draggable="true" 
+                             data-ordem="{{ j.ordem }}"
+                             data-player="{{ j.nome }}"
+                             data-origin="team1"
+                             aria-label="{{ j.ordem }}º jogador: {{ j.nome }}">
+                            <span class="player-chip__order">{{ j.ordem }}º</span>
+                            <span class="player-chip__name">{{ j.nome }}</span>
+                        </div>
+                        {% endfor %}
+                        {% if not times[1] %}
+                        <p class="empty-state empty-state--team" aria-live="polite">Time vazio</p>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="/perdeu/1" class="btn btn--lose" aria-label="Registrar derrota do Time 1">
+                        <span class="btn__icon">❌</span>
+                        Time 1 perdeu
+                    </a>
+                </section>
 
+                <!-- Time 2 -->
+                <section class="card team-card" aria-labelledby="team2-title">
+                    <h2 id="team2-title" class="team-title team-title--yellow">
+                        <span class="team-title__icon">🟡</span>
+                        Time 2
+                        <span class="team-count">({{ times[2]|length }})</span>
+                    </h2>
+                    
+                    <div class="team team--yellow" 
+                         id="team2"
+                         data-team="2"
+                         role="list" 
+                         aria-label="Jogadores do Time 2"
+                         data-dropzone="true">
+                        {% for j in times[2] %}
+                        <div class="player-chip player-chip--team" 
+                             role="listitem"
+                             draggable="true" 
+                             data-ordem="{{ j.ordem }}"
+                             data-player="{{ j.nome }}"
+                             data-origin="team2"
+                             aria-label="{{ j.ordem }}º jogador: {{ j.nome }}">
+                            <span class="player-chip__order">{{ j.ordem }}º</span>
+                            <span class="player-chip__name">{{ j.nome }}</span>
+                        </div>
+                        {% endfor %}
+                        {% if not times[2] %}
+                        <p class="empty-state empty-state--team" aria-live="polite">Time vazio</p>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="/perdeu/2" class="btn btn--lose" aria-label="Registrar derrota do Time 2">
+                        <span class="btn__icon">❌</span>
+                        Time 2 perdeu
+                    </a>
+                </section>
+            </div>
+
+            <!-- Botão Reset -->
+            <div class="reset-container">
+                <a href="/resetar" class="btn btn--reset" aria-label="Resetar todos os dados">
+                    <span class="btn__icon">🔄</span>
+                    Resetar tudo
+                </a>
+            </div>
+
+            <!-- Seção: Histórico -->
+            <section class="card card--full" aria-labelledby="history-title">
+                <h2 id="history-title" class="section-title">
+                    <span class="section-title__icon">📜</span>
+                    Histórico de Partidas
+                </h2>
+                
+                {% if historico %}
+                <div class="history-list" role="list" aria-label="Histórico de partidas">
+                    {% for h in historico %}
+                    <article class="match-history" role="listitem">
+                        <header class="match-history__header">
+                            <h3 class="match-history__title">Partida {{ h.partida }}</h3>
+                        </header>
+                        
+                        <div class="match-history__section">
+                            <h4 class="match-history__subtitle">
+                                <span class="match-history__icon">🏆</span>
+                                Vencedor
+                            </h4>
+                            <div class="match-history__players" role="list" aria-label="Jogadores vencedores">
+                                {% for j in h.vencedor %}
+                                <span class="player-chip player-chip--win" role="listitem">{{ j.nome }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="match-history__section">
+                            <h4 class="match-history__subtitle">
+                                <span class="match-history__icon">❌</span>
+                                Perdedor
+                            </h4>
+                            <div class="match-history__players" role="list" aria-label="Jogadores perdedores">
+                                {% for j in h.perdedor %}
+                                <span class="player-chip player-chip--lose" role="listitem">{{ j.nome }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="match-history__section">
+                            <h4 class="match-history__subtitle">
+                                <span class="match-history__icon">🔄</span>
+                                Entrou na partida
+                            </h4>
+                            <div class="match-history__players" role="list" aria-label="Jogadores que entraram">
+                                {% for j in h.entrou %}
+                                <span class="player-chip player-chip--enter" role="listitem">{{ j.nome }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="empty-state" aria-live="polite">Nenhuma partida registrada no histórico</p>
+                {% endif %}
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p class="footer__text">Gerenciador de Times &copy;</p>
+        </footer>
     </div>
-</div>
 
-<script>
-const LIMITE = 7;
-
-function controlarSelecao(checkbox) {
-    const card = checkbox.closest('.jogador');
-    const time1 = card.querySelector('.time1');
-    const time2 = card.querySelector('.time2');
-
-    if (checkbox === time1 && time1.checked) {
-        time2.checked = false;
-        time2.disabled = true;
-    } else if (checkbox === time2 && time2.checked) {
-        time1.checked = false;
-        time1.disabled = true;
-    } else {
-        time1.disabled = false;
-        time2.disabled = false;
-    }
-
-    controlarLimite('time1');
-    controlarLimite('time2');
-}
-
-function controlarLimite(classe) {
-    const checkboxes = document.querySelectorAll(`.${classe}`);
-    const selecionados = Array.from(checkboxes).filter(c => c.checked);
-
-    checkboxes.forEach(c => {
-        if (!c.checked) {
-            const card = c.closest('.jogador');
-            const outro = classe === 'time1'
-                ? card.querySelector('.time2')
-                : card.querySelector('.time1');
-
-            c.disabled = selecionados.length >= LIMITE || outro.checked;
-        }
-    });
-}
-</script>
-
+    <!-- JavaScript para Drag and Drop -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos que podem receber jogadores (drop zones)
+            const dropZones = document.querySelectorAll('[data-dropzone="true"]');
+            const waitingQueue = document.getElementById('waiting-queue');
+            
+            // Adiciona a fila de espera como uma drop zone também
+            if (waitingQueue) {
+                waitingQueue.setAttribute('data-dropzone', 'true');
+            }
+            
+            // Adiciona eventos a todos os elementos arrastáveis
+            const draggableItems = document.querySelectorAll('[draggable="true"]');
+            
+            draggableItems.forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+            
+            // Adiciona eventos a todas as zonas de drop
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('dragenter', handleDragEnter);
+                zone.addEventListener('dragleave', handleDragLeave);
+                zone.addEventListener('drop', handleDrop);
+            });
+            
+            // Variável para armazenar o elemento sendo arrastado
+            let draggedItem = null;
+            
+            function handleDragStart(e) {
+                draggedItem = this;
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                
+                // Adiciona dados para identificar o elemento
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    ordem: this.getAttribute('data-ordem'),
+                    player: this.getAttribute('data-player'),
+                    origin: this.getAttribute('data-origin')
+                }));
+            }
+            
+            function handleDragEnd(e) {
+                this.classList.remove('dragging');
+                // Remove a classe de destaque de todas as zonas de drop
+                dropZones.forEach(zone => {
+                    zone.classList.remove('drag-over');
+                });
+                draggedItem = null;
+            }
+            
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            }
+            
+            function handleDragEnter(e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            }
+            
+            function handleDragLeave(e) {
+                this.classList.remove('drag-over');
+            }
+            
+            function handleDrop(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                this.classList.remove('drag-over');
+                
+                // Verifica se há um elemento sendo arrastado
+                if (!draggedItem) return;
+                
+                // Obtém o time de destino
+                const targetTeam = this.getAttribute('data-team') || 'fila';
+                const origin = draggedItem.getAttribute('data-origin');
+                
+                // Se estiver arrastando para o mesmo local, não faz nada
+                 if (origin === `team${targetTeam}` || (origin === 'fila' && targetTeam === 'fila')) {
+                    return;
+                }
+                
+                // Obtém dados do jogador
+                const playerData = {
+                    ordem: draggedItem.getAttribute('data-ordem'),
+                    nome: draggedItem.getAttribute('data-player'),
+                    origem: origin
+                };
+                
+                // Envia requisição para mover o jogador
+                fetch('/mover-jogador', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        jogador: playerData,
+                        destino: targetTeam
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Recarrega a página para atualizar os times
+                        window.location.reload();
+                    } else {
+                        alert('Erro ao mover jogador: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao mover jogador');
+                });
+                
+                return false;
+            }
+            
+            // Adiciona estilos CSS para o feedback visual
+            const style = document.createElement('style');
+            style.textContent = `
+                .dragging {
+                    opacity: 0.5;
+                    cursor: grabbing;
+                }
+                
+                .drag-over {
+                    background-color: rgba(0, 150, 255, 0.1);
+                    border: 2px dashed #4CAF50;
+                    min-height: 50px;
+                    transition: all 0.2s ease;
+                }
+                
+                .player-chip {
+                    cursor: grab;
+                    user-select: none;
+                }
+                
+                .player-chip:active {
+                    cursor: grabbing;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
 </body>
 </html>

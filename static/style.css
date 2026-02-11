@@ -671,4 +671,22 @@ body {
     .empty-state {
         background: rgba(255, 255, 255, 0.05);
     }
+
+   .header-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    }
+
+    .small-logo {
+    width: 50px;  /* BEM menor */
+    height: 50px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: white;
+    padding: 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
 }

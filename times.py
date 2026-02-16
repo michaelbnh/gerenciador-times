@@ -52,7 +52,10 @@ class GerenciadorTimes:
 
         self.times[indice] = []
 
+<<<<<<< HEAD
         # Primeiro tenta completar com jogadores que estavam na fila
+=======
+>>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
         while self.fila and len(self.times[indice]) < self.tamanho_time:
             self.times[indice].append(self.fila.pop(0))
         

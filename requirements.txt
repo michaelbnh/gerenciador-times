@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 Flask==2.3.3
 Jinja2==3.1.2
 Werkzeug==2.3.7
+=======
+flask
+gunicorn
+>>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639

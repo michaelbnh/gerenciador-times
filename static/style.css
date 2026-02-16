@@ -573,6 +573,124 @@ body {
     
     .team {
         min-height: 100px;
+<<<<<<< HEAD
+=======
+    }
+}
+
+@media (max-width: 480px) {
+    .player-chip {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 0.75rem;
+    }
+    
+    .btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 0.875rem;
+    }
+    
+    .form-input {
+        padding: var(--spacing-sm);
+    }
+}
+
+/* ==========================================================================
+   ESTADOS DE ARRASTE (DRAG AND DROP)
+   ========================================================================== */
+.player-chip[draggable="true"] {
+    cursor: grab;
+    position: relative;
+}
+
+.player-chip[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.player-chip.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.team.drop-zone-active {
+    background: rgba(37, 99, 235, 0.05);
+    border-color: var(--color-primary);
+    border-style: solid;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.2);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+    }
+}
+
+/* ==========================================================================
+   MELHORIAS DE ACESSIBILIDADE
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Suporte para modo escuro */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg: #0f172a;
+        --color-bg-card: #1e293b;
+        --color-bg-team-blue: #1e3a8a;
+        --color-bg-team-yellow: #78350f;
+        --color-bg-history: #334155;
+        
+        --color-text: #f1f5f9;
+        --color-text-light: #cbd5e1;
+        --color-text-on-secondary: #f8fafc;
+        
+        --color-neutral-light: #475569;
+    }
+    
+    .player-form input {
+        background: #334155;
+        border-color: #475569;
+        color: #f1f5f9;
+    }
+    
+    .empty-state {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+   .header-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    }
+
+    .small-logo {
+    width: 50px;  /* BEM menor */
+    height: 50px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: white;
+    padding: 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+>>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
     }
 }
 

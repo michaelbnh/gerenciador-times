@@ -3,8 +3,14 @@ import random
 from times import GerenciadorTimes
 from database import Database
 import atexit
+import os
+import logging
 
 app = Flask(__name__)
+
+# Configurar logging para o Render
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 TAMANHO_TIME = 7
 
@@ -18,6 +24,8 @@ gerenciador = GerenciadorTimes([], [], [], TAMANHO_TIME)
 fila, times = db.carregar_jogadores()
 historico = db.carregar_historico()
 contador_ordem, contador_partidas = db.carregar_estado()
+
+logger.info(f"🚀 INICIANDO APLICAÇÃO - Dados carregados: {len(fila)} jogadores na fila")
 
 # Atualiza o gerenciador com os dados carregados
 gerenciador.fila = fila.copy()
@@ -47,9 +55,9 @@ def salvar_tudo():
         db.salvar_jogadores(fila, times)
         db.salvar_estado(contador_ordem, contador_partidas)
         db.salvar_historico(historico)
-        print("✅ Dados salvos com sucesso!")
+        logger.info("✅ Dados salvos com sucesso!")
     except Exception as e:
-        print(f"❌ Erro ao salvar dados: {e}")
+        logger.error(f"❌ Erro ao salvar dados: {e}")
 
 # Registra função para salvar ao encerrar
 atexit.register(salvar_tudo)
@@ -68,50 +76,56 @@ def index():
             gerenciador.fila.append(jogador_dict)
             fila.append(jogador_dict)
             
-            print(f"Jogador adicionado: {nome}. Fila agora tem {len(fila)} jogadores")  # Log
+            logger.info(f"✅ Jogador adicionado: {nome}. Fila agora tem {len(fila)} jogadores")
             
-            # VERIFICAÇÃO MAIS ROBUSTA - SORTEIO AUTOMÁTICO
+            # VERIFICAÇÃO CRÍTICA - SORTEIO AUTOMÁTICO
             if len(fila) >= 14:
-                print("🚀 14 JOGADORES ATINGIDOS! SORTEANDO...")
+                logger.info("🚀🚀🚀 14 JOGADORES ATINGIDOS! INICIANDO SORTEIO...")
                 
-                # Pega os primeiros 14 da fila
-                jogadores_sorteados = fila[:14]
-                
-                # Embaralha
-                random.shuffle(jogadores_sorteados)
-                print(f"Jogadores embaralhados: {[j['nome'] for j in jogadores_sorteados]}")
-                
-                # Remove da fila (os 14 primeiros)
-                fila = fila[14:]
-                
-                # Divide em dois times
-                times[1] = jogadores_sorteados[:7]
-                times[2] = jogadores_sorteados[7:]
-                
-                print(f"Time 1: {[j['nome'] for j in times[1]]}")
-                print(f"Time 2: {[j['nome'] for j in times[2]]}")
-                
-                # Atualiza gerenciador
-                gerenciador.fila = fila.copy()
-                gerenciador.times = [times[1].copy(), times[2].copy()]
-                
-                # Adiciona ao histórico
-                historico.insert(0, {
-                    "partida": contador_partidas,
-                    "vencedor": [],
-                    "perdedor": [],
-                    "entrou": [],
-                    "sorteio": True,
-                    "time1": times[1].copy(),
-                    "time2": times[2].copy()
-                })
-                
-                contador_partidas += 1
-                
-                # Salva no banco
-                salvar_tudo()
-                
-                print("✅ SORTEIO REALIZADO COM SUCESSO!")
+                try:
+                    # Pega os primeiros 14 da fila
+                    jogadores_sorteados = fila[:14]
+                    logger.info(f"Jogadores para sorteio: {[j['nome'] for j in jogadores_sorteados]}")
+                    
+                    # Embaralha
+                    random.shuffle(jogadores_sorteados)
+                    logger.info(f"Jogadores embaralhados: {[j['nome'] for j in jogadores_sorteados]}")
+                    
+                    # Remove da fila (os 14 primeiros)
+                    fila = fila[14:]
+                    logger.info(f"Fila após remoção: {len(fila)} jogadores restantes")
+                    
+                    # Divide em dois times
+                    times[1] = jogadores_sorteados[:7]
+                    times[2] = jogadores_sorteados[7:]
+                    
+                    logger.info(f"🔵 TIME 1: {[j['nome'] for j in times[1]]}")
+                    logger.info(f"🟡 TIME 2: {[j['nome'] for j in times[2]]}")
+                    
+                    # Atualiza gerenciador
+                    gerenciador.fila = fila.copy()
+                    gerenciador.times = [times[1].copy(), times[2].copy()]
+                    
+                    # Adiciona ao histórico
+                    historico.insert(0, {
+                        "partida": contador_partidas,
+                        "vencedor": [],
+                        "perdedor": [],
+                        "entrou": [],
+                        "sorteio": True,
+                        "time1": times[1].copy(),
+                        "time2": times[2].copy()
+                    })
+                    
+                    contador_partidas += 1
+                    
+                    # Salva no banco
+                    salvar_tudo()
+                    
+                    logger.info("🎉🎉🎉 SORTEIO REALIZADO COM SUCESSO!")
+                    
+                except Exception as e:
+                    logger.error(f"❌ ERRO NO SORTEIO: {str(e)}")
             
         return redirect("/")
 
@@ -124,6 +138,7 @@ def perdeu(time_perdedor):
     time_vencedor = 1 if time_perdedor == 2 else 2
 
     if len(times[time_perdedor]) != TAMANHO_TIME or len(times[time_vencedor]) != TAMANHO_TIME:
+        logger.warning(f"Times incompletos: Time{time_perdedor}={len(times[time_perdedor])}, Time{time_vencedor}={len(times[time_vencedor])}")
         return redirect("/")
 
     perdedor_snapshot = times[time_perdedor].copy()
@@ -175,6 +190,7 @@ def perdeu(time_perdedor):
     salvar_tudo()
     
     if len(fila) >= 14:
+        logger.info("🔄 Redirecionando para sorteio automático após partida")
         return redirect("/sortear-automatico")
     
     return redirect("/")
@@ -184,57 +200,64 @@ def sortear_automatico():
     """Rota para sorteio automático quando tem 14 jogadores"""
     global fila, times, contador_partidas, historico
     
-    print("🔄 Rota /sortear-automatico chamada")
-    print(f"Tamanho da fila: {len(fila)}")
+    logger.info("🔄 Rota /sortear-automatico chamada")
+    logger.info(f"Tamanho da fila: {len(fila)}")
     
     if len(fila) >= 14:
-        print("🚀 Iniciando sorteio...")
+        logger.info("🚀 Iniciando sorteio...")
         
-        # Pega os primeiros 14
-        jogadores_sorteados = fila[:14]
-        
-        # Embaralha
-        random.shuffle(jogadores_sorteados)
-        
-        # Remove da fila
-        fila = fila[14:]
-        
-        # Cria os times
-        times[1] = jogadores_sorteados[:7]
-        times[2] = jogadores_sorteados[7:]
-        
-        print(f"Time 1: {len(times[1])} jogadores")
-        print(f"Time 2: {len(times[2])} jogadores")
-        
-        # Atualiza gerenciador
-        gerenciador.fila = fila.copy()
-        gerenciador.times = [times[1].copy(), times[2].copy()]
-        
-        # Adiciona ao histórico
-        historico.insert(0, {
-            "partida": contador_partidas,
-            "vencedor": [],
-            "perdedor": [],
-            "entrou": [],
-            "sorteio": True,
-            "time1": times[1].copy(),
-            "time2": times[2].copy()
-        })
-        
-        contador_partidas += 1
-        
-        # Salva no banco
-        salvar_tudo()
-        
-        print("✅ Sorteio concluído!")
+        try:
+            # Pega os primeiros 14
+            jogadores_sorteados = fila[:14]
+            logger.info(f"Jogadores para sorteio: {[j['nome'] for j in jogadores_sorteados]}")
+            
+            # Embaralha
+            random.shuffle(jogadores_sorteados)
+            
+            # Remove da fila
+            fila = fila[14:]
+            
+            # Cria os times
+            times[1] = jogadores_sorteados[:7]
+            times[2] = jogadores_sorteados[7:]
+            
+            logger.info(f"Time 1: {[j['nome'] for j in times[1]]}")
+            logger.info(f"Time 2: {[j['nome'] for j in times[2]]}")
+            
+            # Atualiza gerenciador
+            gerenciador.fila = fila.copy()
+            gerenciador.times = [times[1].copy(), times[2].copy()]
+            
+            # Adiciona ao histórico
+            historico.insert(0, {
+                "partida": contador_partidas,
+                "vencedor": [],
+                "perdedor": [],
+                "entrou": [],
+                "sorteio": True,
+                "time1": times[1].copy(),
+                "time2": times[2].copy()
+            })
+            
+            contador_partidas += 1
+            
+            # Salva no banco
+            salvar_tudo()
+            
+            logger.info("✅ Sorteio concluído com sucesso!")
+            
+        except Exception as e:
+            logger.error(f"❌ Erro no sorteio: {str(e)}")
     else:
-        print(f"❌ Fila insuficiente: {len(fila)}/14")
+        logger.warning(f"❌ Fila insuficiente: {len(fila)}/14")
     
     return redirect("/")
 
 @app.route("/resetar")
 def resetar():
     global fila, times, historico, contador_ordem, contador_partidas, gerenciador
+    
+    logger.info("🔄 Resetando toda a aplicação")
     
     fila = []
     times = {1: [], 2: []}
@@ -245,6 +268,8 @@ def resetar():
     
     # Salva estado resetado
     salvar_tudo()
+    
+    logger.info("✅ Aplicação resetada com sucesso")
     
     return redirect("/")
 
@@ -257,6 +282,7 @@ def editar():
                   gerenciador.times[1] if len(gerenciador.times) > 1 else []]:
         for j in lista:
             if isinstance(j, dict) and j.get("ordem") == ordem:
+                logger.info(f"Editando jogador {j['nome']} para {novo_nome}")
                 j["nome"] = novo_nome
                 break
 
@@ -282,6 +308,7 @@ def drag():
             break
 
     if jogador:
+        logger.info(f"Arrastando jogador {jogador['nome']} para time {destino}")
         times[destino].append(jogador)
         if destino == 1:
             if len(gerenciador.times) == 0:
@@ -338,6 +365,8 @@ def mover_jogador():
         if not jogador:
             return jsonify({'success': False, 'message': 'Jogador não encontrado'})
         
+        logger.info(f"Movendo jogador {jogador['nome']} de {origem} para {destino}")
+        
         if destino == 'fila':
             if jogador not in fila:
                 fila.append(jogador)
@@ -393,7 +422,7 @@ def mover_jogador():
         return jsonify({'success': True, 'message': 'Jogador movido com sucesso'})
         
     except Exception as e:
-        print(f"Erro ao mover jogador: {e}")
+        logger.error(f"Erro ao mover jogador: {e}")
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route("/status")
@@ -410,17 +439,72 @@ def testar_sorteio():
     """Rota para testar o sorteio manualmente"""
     global fila, times, contador_partidas, historico
     
+    logger.info("🧪 Rota /testar-sorteio chamada")
+    
     if len(fila) >= 14:
+        logger.info("✅ Fila tem 14+ jogadores, redirecionando para sorteio")
         return redirect("/sortear-automatico")
     else:
-        return f"Fila tem apenas {len(fila)} jogadores. Precisa de 14."
+        msg = f"❌ Fila tem apenas {len(fila)} jogadores. Precisa de 14."
+        logger.warning(msg)
+        return msg
+
+@app.route("/teste-sorteio-forcado")
+def teste_sorteio_forcado():
+    """Rota para forçar um sorteio com dados de teste"""
+    global fila, times, contador_partidas, historico, contador_ordem
+    
+    logger.info("🧪🧪🧪 TESTE FORÇADO INICIADO")
+    
+    # Limpa tudo
+    fila = []
+    times = {1: [], 2: []}
+    
+    # Cria 14 jogadores de teste
+    for i in range(1, 15):
+        jogador = {"nome": f"Teste{i}", "ordem": contador_ordem}
+        contador_ordem += 1
+        fila.append(jogador)
+    
+    logger.info(f"✅ 14 jogadores de teste criados: {[j['nome'] for j in fila]}")
+    
+    # Força o sorteio
+    jogadores_sorteados = fila[:14]
+    random.shuffle(jogadores_sorteados)
+    
+    fila = fila[14:]
+    
+    times[1] = jogadores_sorteados[:7]
+    times[2] = jogadores_sorteados[7:]
+    
+    logger.info(f"🔵 TIME 1 (teste): {[j['nome'] for j in times[1]]}")
+    logger.info(f"🟡 TIME 2 (teste): {[j['nome'] for j in times[2]]}")
+    
+    gerenciador.fila = fila.copy()
+    gerenciador.times = [times[1].copy(), times[2].copy()]
+    
+    historico.insert(0, {
+        "partida": contador_partidas,
+        "vencedor": [],
+        "perdedor": [],
+        "entrou": [],
+        "sorteio": True,
+        "time1": times[1].copy(),
+        "time2": times[2].copy()
+    })
+    
+    contador_partidas += 1
+    salvar_tudo()
+    
+    logger.info("🎉🎉🎉 TESTE FORÇADO CONCLUÍDO COM SUCESSO!")
+    
+    return redirect("/")
 
 @app.route("/debug-db")
 def debug_db():
     """Rota para debug - mostra estatísticas do banco"""
     try:
         import sqlite3
-        import os
         
         # Tenta conectar no banco
         db_path = '/data/gerenciador.db' if os.path.exists('/data') else 'gerenciador.db'
@@ -440,15 +524,38 @@ def debug_db():
         conn.close()
         
         return f"""
-        <h2>Debug do Banco de Dados</h2>
-        <p><strong>Caminho:</strong> {db_path}</p>
-        <p><strong>Total de jogadores:</strong> {total_jogadores}</p>
-        <p><strong>Por localização:</strong> {localizacoes}</p>
-        <p><strong>Partidas no histórico:</strong> {total_partidas}</p>
-        <p><strong>Arquivo existe?</strong> {os.path.exists(db_path)}</p>
+        <html>
+        <head><title>Debug DB</title></head>
+        <body style="font-family: Arial; padding: 20px;">
+            <h2>🔍 Debug do Banco de Dados</h2>
+            <p><strong>Caminho:</strong> {db_path}</p>
+            <p><strong>Arquivo existe?</strong> {os.path.exists(db_path)}</p>
+            <p><strong>Total de jogadores:</strong> {total_jogadores}</p>
+            <p><strong>Por localização:</strong> {localizacoes}</p>
+            <p><strong>Partidas no histórico:</strong> {total_partidas}</p>
+            <p><strong>Fila atual (memória):</strong> {len(fila)} jogadores</p>
+            <p><strong>Time 1:</strong> {len(times[1])} jogadores</p>
+            <p><strong>Time 2:</strong> {len(times[2])} jogadores</p>
+            <p><a href="/">⬅️ Voltar</a> | <a href="/teste-sorteio-forcado">🧪 Forçar teste</a></p>
+        </body>
+        </html>
         """
     except Exception as e:
         return f"<h2>Erro</h2><p>{str(e)}</p>"
+
+@app.route("/logs")
+def ver_logs():
+    """Rota simples para ver os logs recentes (últimas 50 linhas)"""
+    return """
+    <html>
+    <head><title>Logs</title></head>
+    <body style="font-family: monospace; padding: 20px;">
+        <h2>📋 Logs da Aplicação</h2>
+        <p>Para ver os logs completos, acesse o dashboard do Render.</p>
+        <p><a href="/">⬅️ Voltar</a></p>
+    </body>
+    </html>
+    """
 
 if __name__ == "__main__":
     app.run(debug=True)

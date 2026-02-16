@@ -1,17 +1,13 @@
 from flask import Flask, render_template, request, redirect, jsonify
-<<<<<<< HEAD
 import random
 from times import GerenciadorTimes
 from database import Database
 import atexit
 
-=======
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
 app = Flask(__name__)
 
 TAMANHO_TIME = 7
 
-<<<<<<< HEAD
 # Inicializa o banco de dados
 db = Database()
 
@@ -61,40 +57,45 @@ atexit.register(salvar_tudo)
 @app.route("/", methods=["GET", "POST"])
 def index():
     global contador_ordem, fila, times, historico, contador_partidas
-=======
-fila = []
-times = {1: [], 2: []}
-historico = []
-contador_ordem = 1
-contador_partidas = 1
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    global contador_ordem
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
 
     if request.method == "POST":
         nome = request.form.get("nome")
         if nome:
-<<<<<<< HEAD
             jogador_dict = {"nome": nome, "ordem": contador_ordem}
             contador_ordem += 1
             
+            # Adiciona à fila
             gerenciador.fila.append(jogador_dict)
             fila.append(jogador_dict)
             
+            print(f"Jogador adicionado: {nome}. Fila agora tem {len(fila)} jogadores")  # Log
+            
+            # VERIFICAÇÃO MAIS ROBUSTA - SORTEIO AUTOMÁTICO
             if len(fila) >= 14:
+                print("🚀 14 JOGADORES ATINGIDOS! SORTEANDO...")
+                
+                # Pega os primeiros 14 da fila
                 jogadores_sorteados = fila[:14]
+                
+                # Embaralha
                 random.shuffle(jogadores_sorteados)
+                print(f"Jogadores embaralhados: {[j['nome'] for j in jogadores_sorteados]}")
                 
+                # Remove da fila (os 14 primeiros)
                 fila = fila[14:]
-                gerenciador.fila = fila.copy()
                 
+                # Divide em dois times
                 times[1] = jogadores_sorteados[:7]
                 times[2] = jogadores_sorteados[7:]
                 
+                print(f"Time 1: {[j['nome'] for j in times[1]]}")
+                print(f"Time 2: {[j['nome'] for j in times[2]]}")
+                
+                # Atualiza gerenciador
+                gerenciador.fila = fila.copy()
                 gerenciador.times = [times[1].copy(), times[2].copy()]
                 
+                # Adiciona ao histórico
                 historico.insert(0, {
                     "partida": contador_partidas,
                     "vencedor": [],
@@ -106,9 +107,11 @@ def index():
                 })
                 
                 contador_partidas += 1
-            
-            # Salva após cada modificação
-            salvar_tudo()
+                
+                # Salva no banco
+                salvar_tudo()
+                
+                print("✅ SORTEIO REALIZADO COM SUCESSO!")
             
         return redirect("/")
 
@@ -130,67 +133,10 @@ def perdeu(time_perdedor):
     entrou = []
 
     # Primeiro: puxa da fila
-=======
-            fila.append({"nome": nome, "ordem": contador_ordem})
-            contador_ordem += 1
-        return redirect("/")
-
-    return render_template("index.html", fila=fila, times=times, historico=historico)
-
-@app.route("/editar", methods=["POST"])
-def editar():
-    ordem = int(request.form["ordem"])
-    novo_nome = request.form["nome"]
-
-    for lista in [fila, times[1], times[2]]:
-        for j in lista:
-            if j["ordem"] == ordem:
-                j["nome"] = novo_nome
-                break
-
-    return redirect("/")
-
-@app.route("/drag", methods=["POST"])
-def drag():
-    ordem = int(request.form["ordem"])
-    destino = int(request.form["destino"])
-
-    if len(times[destino]) >= TAMANHO_TIME:
-        return redirect("/")
-
-    jogador = None
-    for j in fila:
-        if j["ordem"] == ordem:
-            jogador = j
-            fila.remove(j)
-            break
-
-    if jogador:
-        times[destino].append(jogador)
-
-    return redirect("/")
-
-@app.route("/perdeu/<int:time_perdedor>")
-def perdeu(time_perdedor):
-    global contador_partidas
-
-    time_vencedor = 1 if time_perdedor == 2 else 2
-
-    perdedor_snapshot = times[time_perdedor].copy()
-    vencedor_snapshot = times[time_vencedor].copy()
-
-    if len(perdedor_snapshot) != TAMANHO_TIME or len(vencedor_snapshot) != TAMANHO_TIME:
-        return redirect("/")
-
-    times[time_perdedor] = []
-    entrou = []
-
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
     while len(times[time_perdedor]) < TAMANHO_TIME and fila:
         j = fila.pop(0)
         times[time_perdedor].append(j)
         entrou.append(j)
-<<<<<<< HEAD
     
     # Segundo: completa com perdedores se necessário
     perdedores_ordenados = sorted(perdedor_snapshot, key=lambda x: x["ordem"])
@@ -214,28 +160,11 @@ def perdeu(time_perdedor):
     if len(gerenciador.times) >= 2:
         gerenciador.times[time_perdedor-1] = times[time_perdedor].copy()
         gerenciador.times[time_vencedor-1] = times[time_vencedor].copy()
-=======
-
-    usados = set(j["ordem"] for j in times[time_perdedor])
-
-    perdedores_ordenados = sorted(perdedor_snapshot, key=lambda x: x["ordem"])
-    for j in perdedores_ordenados:
-        if len(times[time_perdedor]) < TAMANHO_TIME:
-            times[time_perdedor].append(j)
-            usados.add(j["ordem"])
-
-    for j in perdedor_snapshot:
-        if j["ordem"] not in usados:
-            fila.append(j)
-
-    fila.sort(key=lambda x: x["ordem"])
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
 
     historico.insert(0, {
         "partida": contador_partidas,
         "vencedor": vencedor_snapshot,
         "perdedor": perdedor_snapshot,
-<<<<<<< HEAD
         "entrou": entrou,
         "sorteio": False
     })
@@ -252,20 +181,36 @@ def perdeu(time_perdedor):
 
 @app.route("/sortear-automatico")
 def sortear_automatico():
+    """Rota para sorteio automático quando tem 14 jogadores"""
     global fila, times, contador_partidas, historico
     
+    print("🔄 Rota /sortear-automatico chamada")
+    print(f"Tamanho da fila: {len(fila)}")
+    
     if len(fila) >= 14:
+        print("🚀 Iniciando sorteio...")
+        
+        # Pega os primeiros 14
         jogadores_sorteados = fila[:14]
+        
+        # Embaralha
         random.shuffle(jogadores_sorteados)
         
+        # Remove da fila
         fila = fila[14:]
         
+        # Cria os times
         times[1] = jogadores_sorteados[:7]
         times[2] = jogadores_sorteados[7:]
         
+        print(f"Time 1: {len(times[1])} jogadores")
+        print(f"Time 2: {len(times[2])} jogadores")
+        
+        # Atualiza gerenciador
         gerenciador.fila = fila.copy()
         gerenciador.times = [times[1].copy(), times[2].copy()]
         
+        # Adiciona ao histórico
         historico.insert(0, {
             "partida": contador_partidas,
             "vencedor": [],
@@ -278,31 +223,24 @@ def sortear_automatico():
         
         contador_partidas += 1
         
-        # Salva após sorteio
+        # Salva no banco
         salvar_tudo()
+        
+        print("✅ Sorteio concluído!")
+    else:
+        print(f"❌ Fila insuficiente: {len(fila)}/14")
     
-=======
-        "entrou": entrou
-    })
-
-    contador_partidas += 1
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
     return redirect("/")
 
 @app.route("/resetar")
 def resetar():
-<<<<<<< HEAD
     global fila, times, historico, contador_ordem, contador_partidas, gerenciador
     
-=======
-    global fila, times, historico, contador_ordem, contador_partidas
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
     fila = []
     times = {1: [], 2: []}
     historico = []
     contador_ordem = 1
     contador_partidas = 1
-<<<<<<< HEAD
     gerenciador = GerenciadorTimes([], [], [], TAMANHO_TIME)
     
     # Salva estado resetado
@@ -358,11 +296,6 @@ def drag():
 
     salvar_tudo()
     return redirect("/")
-=======
-    return redirect("/")
-
-
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
 
 @app.route('/mover-jogador', methods=['POST'])
 def mover_jogador():
@@ -375,60 +308,36 @@ def mover_jogador():
         nome = jogador_data['nome']
         origem = jogador_data['origem']
         
-<<<<<<< HEAD
         jogador = None
         
         if origem == 'fila':
-=======
-        # Encontrar e remover o jogador da origem
-        jogador = None
-        
-        if origem == 'fila':
-            # Remover da fila
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
             for j in fila:
                 if j['ordem'] == ordem and j['nome'] == nome:
                     jogador = j
                     fila.remove(j)
-<<<<<<< HEAD
                     if j in gerenciador.fila:
                         gerenciador.fila.remove(j)
                     break
         elif origem == 'team1':
-=======
-                    break
-        elif origem == 'team1':
-            # Remover do time 1
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
             for j in times[1]:
                 if j['ordem'] == ordem and j['nome'] == nome:
                     jogador = j
                     times[1].remove(j)
-<<<<<<< HEAD
                     if len(gerenciador.times) > 0 and j in gerenciador.times[0]:
                         gerenciador.times[0].remove(j)
                     break
         elif origem == 'team2':
-=======
-                    break
-        elif origem == 'team2':
-            # Remover do time 2
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
             for j in times[2]:
                 if j['ordem'] == ordem and j['nome'] == nome:
                     jogador = j
                     times[2].remove(j)
-<<<<<<< HEAD
                     if len(gerenciador.times) > 1 and j in gerenciador.times[1]:
                         gerenciador.times[1].remove(j)
-=======
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
                     break
         
         if not jogador:
             return jsonify({'success': False, 'message': 'Jogador não encontrado'})
         
-<<<<<<< HEAD
         if destino == 'fila':
             if jogador not in fila:
                 fila.append(jogador)
@@ -445,32 +354,12 @@ def mover_jogador():
                     times[2].append(jogador)
                     if len(gerenciador.times) > 1:
                         gerenciador.times[1].append(jogador)
-=======
-        # Adicionar ao destino
-        if destino == 'fila':
-            # Verificar se já está na fila (não deveria acontecer)
-            if jogador not in fila:
-                fila.append(jogador)
-                # Ordenar fila por ordem
-                fila.sort(key=lambda x: x['ordem'])
-                
-        elif destino == '1':
-            # Verificar se o time já está cheio
-            if len(times[1]) >= TAMANHO_TIME:
-                # Devolver jogador à origem
-                if origem == 'fila':
-                    fila.append(jogador)
-                    fila.sort(key=lambda x: x['ordem'])
-                elif origem == 'team2':
-                    times[2].append(jogador)
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
                 
                 return jsonify({
                     'success': False, 
                     'message': f'Time 1 já está completo ({TAMANHO_TIME} jogadores)'
                 })
             
-<<<<<<< HEAD
             times[1].append(jogador)
             if len(gerenciador.times) < 1:
                 gerenciador.times.append([])
@@ -487,27 +376,12 @@ def mover_jogador():
                     times[1].append(jogador)
                     if len(gerenciador.times) > 0:
                         gerenciador.times[0].append(jogador)
-=======
-            # Adicionar ao time 1
-            times[1].append(jogador)
-            
-        elif destino == '2':
-            # Verificar se o time já está cheio
-            if len(times[2]) >= TAMANHO_TIME:
-                # Devolver jogador à origem
-                if origem == 'fila':
-                    fila.append(jogador)
-                    fila.sort(key=lambda x: x['ordem'])
-                elif origem == 'team1':
-                    times[1].append(jogador)
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
                 
                 return jsonify({
                     'success': False, 
                     'message': f'Time 2 já está completo ({TAMANHO_TIME} jogadores)'
                 })
             
-<<<<<<< HEAD
             times[2].append(jogador)
             if len(gerenciador.times) < 2:
                 gerenciador.times.append([])
@@ -515,10 +389,6 @@ def mover_jogador():
         
         # Salva após mover
         salvar_tudo()
-=======
-            # Adicionar ao time 2
-            times[2].append(jogador)
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
         
         return jsonify({'success': True, 'message': 'Jogador movido com sucesso'})
         
@@ -526,7 +396,6 @@ def mover_jogador():
         print(f"Erro ao mover jogador: {e}")
         return jsonify({'success': False, 'message': str(e)})
 
-<<<<<<< HEAD
 @app.route("/status")
 def status():
     return jsonify({
@@ -536,11 +405,50 @@ def status():
         'pode_sortear': len(fila) >= 14
     })
 
+@app.route("/testar-sorteio")
+def testar_sorteio():
+    """Rota para testar o sorteio manualmente"""
+    global fila, times, contador_partidas, historico
+    
+    if len(fila) >= 14:
+        return redirect("/sortear-automatico")
+    else:
+        return f"Fila tem apenas {len(fila)} jogadores. Precisa de 14."
+
+@app.route("/debug-db")
+def debug_db():
+    """Rota para debug - mostra estatísticas do banco"""
+    try:
+        import sqlite3
+        import os
+        
+        # Tenta conectar no banco
+        db_path = '/data/gerenciador.db' if os.path.exists('/data') else 'gerenciador.db'
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Estatísticas
+        cursor.execute("SELECT COUNT(*) FROM jogadores")
+        total_jogadores = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT localizacao, COUNT(*) FROM jogadores GROUP BY localizacao")
+        localizacoes = cursor.fetchall()
+        
+        cursor.execute("SELECT COUNT(*) FROM historico")
+        total_partidas = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return f"""
+        <h2>Debug do Banco de Dados</h2>
+        <p><strong>Caminho:</strong> {db_path}</p>
+        <p><strong>Total de jogadores:</strong> {total_jogadores}</p>
+        <p><strong>Por localização:</strong> {localizacoes}</p>
+        <p><strong>Partidas no histórico:</strong> {total_partidas}</p>
+        <p><strong>Arquivo existe?</strong> {os.path.exists(db_path)}</p>
+        """
+    except Exception as e:
+        return f"<h2>Erro</h2><p>{str(e)}</p>"
+
 if __name__ == "__main__":
     app.run(debug=True)
-=======
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639

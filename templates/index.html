@@ -19,7 +19,6 @@
     <h1 class="header__title">TIME DOS CANSADOS</h1>
     </div>
 
-<<<<<<< HEAD
     <!-- Alerta de sorteio automático -->
     {% if fila|length >= 14 %}
     <div class="alert alert-success" id="sorteio-alert" style="background-color: #4CAF50; color: white; padding: 15px; margin: 10px; border-radius: 5px; text-align: center; font-weight: bold;">
@@ -34,8 +33,6 @@
     </script>
     {% endif %}
 
-=======
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
         <main class="main-content">
             <!-- Seção: Adicionar Jogador -->
             <section class="card card--full" aria-labelledby="add-player-title">
@@ -65,10 +62,8 @@
                 <h2 id="waiting-queue-title" class="section-title">
                     <span class="section-title__icon">⏳</span>
                     Fila de Espera
-<<<<<<< HEAD
                     <span class="team-count">({{ fila|length }})</span>
-=======
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
+
                 </h2>
                 <div class="waiting-queue" id="waiting-queue" role="list" aria-label="Jogadores na fila de espera">
                     {% for j in fila %}
@@ -96,11 +91,10 @@
                     <h2 id="team1-title" class="team-title team-title--blue">
                         <span class="team-title__icon">🔵</span>
                         Time 1
-<<<<<<< HEAD
+
                         <span class="team-count">({{ times[1]|length }}/{{ tamanho_time }})</span>
-=======
                         <span class="team-count">({{ times[1]|length }})</span>
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
+
                     </h2>
                     
                     <div class="team team--blue" 
@@ -137,11 +131,9 @@
                     <h2 id="team2-title" class="team-title team-title--yellow">
                         <span class="team-title__icon">🟡</span>
                         Time 2
-<<<<<<< HEAD
                         <span class="team-count">({{ times[2]|length }}/{{ tamanho_time }})</span>
-=======
                         <span class="team-count">({{ times[2]|length }})</span>
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
+
                     </h2>
                     
                     <div class="team team--yellow" 
@@ -195,7 +187,6 @@
                     <article class="match-history" role="listitem">
                         <header class="match-history__header">
                             <h3 class="match-history__title">Partida {{ h.partida }}</h3>
-<<<<<<< HEAD
                             {% if h.sorteio %}
                             <span class="badge badge-sorteio" style="background-color: #4CAF50; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; margin-left: 10px;">🎲 SORTEIO</span>
                             {% endif %}
@@ -231,7 +222,7 @@
 =======
                         </header>
                         
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
+
                         <div class="match-history__section">
                             <h4 class="match-history__subtitle">
                                 <span class="match-history__icon">🏆</span>
@@ -265,7 +256,7 @@
                                 {% for j in h.entrou %}
                                 <span class="player-chip player-chip--enter" role="listitem">{{ j.nome }}</span>
                                 {% endfor %}
-<<<<<<< HEAD
+
                                 {% if not h.entrou %}
                                 <span class="empty-state">Ninguém entrou</span>
                                 {% endif %}
@@ -275,7 +266,6 @@
 =======
                             </div>
                         </div>
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
                     </article>
                     {% endfor %}
                 </div>
@@ -432,17 +422,8 @@
                 }
                 
                 .player-chip:active {
-                    cursor: grabbing;
+                    cursor: grabbing;''
                 }
-<<<<<<< HEAD
-
-                .badge-sorteio {
-                    display: inline-block;
-                    font-size: 0.8em;
-                    margin-left: 10px;
-                }
-=======
->>>>>>> 8859576d84ec504ccac5afffba7c8a5171bae639
             `;
             document.head.appendChild(style);
         });
